@@ -30,3 +30,9 @@ out
 node_modules
 .env*
 .DS_Store
+
+# Stray files
+0.2.0
+xpackage.json
+xxpackage.json
+xxxxmiddleware.ts
