@@ -1,23 +1,21 @@
+// next.config.mjs (ESM) — recrée __dirname
+import { fileURLToPath } from "url"
+import { dirname } from "path"
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
+  // Évite l’avertissement "workspace root" de Turbopack
+  turbopack: { root: __dirname },
+
+  images: { unoptimized: true },
+
   experimental: {
-    serverActions: {
-      bodySizeLimit: "2mb",
-    },
+    serverActions: { bodySizeLimit: "2mb" },
   },
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  },
+
+  // Garde si tu en as besoin (idéalement off en CI)
+  typescript: { ignoreBuildErrors: true },
 }
 
 export default nextConfig
