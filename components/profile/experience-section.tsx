@@ -26,9 +26,9 @@ interface Experience {
   id: string
   company: string
   position: string
-  start_date: string | null
-  end_date: string | null
-  is_current: boolean
+  startDate: string | null
+  endDate: string | null
+  isCurrent: boolean
   description: string | null
   location: string | null
 }
@@ -43,12 +43,12 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
   const [formData, setFormData] = useState({
     company: "",
     position: "",
-    start_date: "",
-    end_date: "",
-    is_current: false,
+    startDate: "",
+    endDate: "",
+    isCurrent: false,
     description: "",
     location: "",
-    display_order: 0,
+    displayOrder: 0,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +70,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
         is_current: false,
         description: "",
         location: "",
-        display_order: 0,
+        displayOrder: 0,
       })
     }
 
@@ -141,36 +141,36 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="start_date">Date de début</Label>
-                      <Input
-                        id="start_date"
-                        type="date"
-                        value={formData.start_date}
-                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="end_date">Date de fin</Label>
-                      <Input
-                        id="end_date"
-                        type="date"
-                        value={formData.end_date}
-                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                        disabled={formData.is_current}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="is_current"
-                      checked={formData.is_current}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_current: checked as boolean })}
+                    <Label htmlFor="startDate">Date de début</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     />
-                    <Label htmlFor="is_current" className="cursor-pointer">
-                      Je travaille actuellement ici
-                    </Label>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">Date de fin</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      disabled={formData.isCurrent}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isCurrent"
+                    checked={formData.isCurrent}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isCurrent: checked as boolean })}
+                  />
+                  <Label htmlFor="isCurrent" className="cursor-pointer">
+                    Je travaille actuellement ici
+                  </Label>
+                </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
@@ -212,7 +212,7 @@ export function ExperienceSection({ experiences }: ExperienceSectionProps) {
                   <p className="text-sm text-muted-foreground">{exp.company}</p>
                   {exp.location && <p className="text-sm text-muted-foreground">{exp.location}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {exp.start_date} - {exp.is_current ? "Présent" : exp.end_date}
+                    {exp.startDate} - {exp.isCurrent ? "Présent" : exp.endDate}
                   </p>
                   {exp.description && <p className="mt-2 text-sm">{exp.description}</p>}
                 </div>

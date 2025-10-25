@@ -1,29 +1,22 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { CVEditor } from "@/components/editor/cv-editor"
 import { saveCVStructure } from "@/lib/actions/cv"
+import { requireSession } from "@/lib/auth/session"
+import { prisma } from "@/lib/prisma"
 
 export default async function EditorPage({ params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
   const { id } = await params
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
 
-  const { data: cv, error: cvError } = await supabase
-    .from("user_cvs")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single()
+  const cv = await prisma.userCv.findFirst({
+    where: { id, userId: session.user.id },
+  })
 
-  if (cvError || !cv) {
+  if (!cv) {
     redirect("/my-cvs")
   }
 
@@ -32,5 +25,5 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
     await saveCVStructure(id, structure)
   }
 
-  return <CVEditor cvId={cv.id} cvName={cv.cv_name} initialStructure={cv.cv_structure} onSave={handleSave} />
+  return <CVEditor cvId={cv.id} cvName={cv.name} initialStructure={cv.structure} onSave={handleSave} />
 }

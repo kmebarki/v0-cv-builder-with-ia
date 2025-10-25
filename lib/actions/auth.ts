@@ -1,53 +1,35 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
+import { auth } from "@/lib/auth/server"
+import { getRequestContext, getSessionToken } from "@/lib/auth/context"
+import { env } from "@/lib/env"
+import { prisma } from "@/lib/prisma"
 
 export async function signOut() {
-  const supabase = await createClient()
-  const { error } = await supabase.auth.signOut()
-
-  if (error) {
-    console.error("Error signing out:", error)
-    return { error: error.message }
-  }
-
+  const context = getRequestContext()
+  const token = getSessionToken(env.betterAuth.sessionCookieName)
+  await auth.logout(context, token)
   revalidatePath("/", "layout")
   redirect("/")
 }
 
 export async function getCurrentUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
-    return null
-  }
-
-  return user
+  const context = getRequestContext()
+  const token = getSessionToken(env.betterAuth.sessionCookieName)
+  const session = await auth.getSession(token, context)
+  if (!session.success || !session.data) return null
+  return session.data.user
 }
 
 export async function getUserProfile() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
+  if (!user) return null
 
-  if (authError || !user) {
-    return null
-  }
-
-  const { data: profile, error: profileError } = await supabase.from("users").select("*").eq("id", user.id).single()
-
-  if (profileError) {
-    console.error("Error fetching profile:", profileError)
-    return null
-  }
+  const profile = await prisma.user.findUnique({
+    where: { id: user.id },
+  })
 
   return profile
 }

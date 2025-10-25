@@ -25,6 +25,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "better-auth": [
+        "./lib/stubs/better-auth"
+      ],
+      "@better-auth/prisma-adapter": [
+        "./lib/stubs/better-auth-prisma-adapter"
       ]
     }
   },

@@ -1,30 +1,29 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { prisma } from "@/lib/prisma"
+import { requireUser } from "@/lib/auth/session"
 
 export async function saveCVStructure(cvId: string, structure: string) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const user = await requireUser()
   if (!user) {
     throw new Error("Non authentifié")
   }
 
-  const { error } = await supabase
-    .from("user_cvs")
-    .update({
-      cv_structure: JSON.parse(structure),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", cvId)
-    .eq("user_id", user.id)
+  const parsedStructure = JSON.parse(structure)
 
-  if (error) {
-    throw new Error(error.message)
+  const cv = await prisma.userCv.findUnique({ where: { id: cvId } })
+  if (!cv || cv.userId !== user.id) {
+    throw new Error("CV introuvable")
   }
+
+  await prisma.userCv.update({
+    where: { id: cvId },
+    data: {
+      structure: parsedStructure,
+      version: cv.version + 1,
+    },
+  })
 
   revalidatePath(`/editor/${cvId}`)
 }

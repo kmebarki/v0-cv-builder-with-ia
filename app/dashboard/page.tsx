@@ -1,22 +1,19 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { FileText, Plus, Settings } from "lucide-react"
 import { UserNav } from "@/components/user-nav"
+import { requireSession } from "@/lib/auth/session"
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
+
+  const { user } = session
 
   return (
     <div className="min-h-screen bg-background">

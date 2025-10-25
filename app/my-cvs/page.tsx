@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { UserNav } from "@/components/user-nav"
 import Link from "next/link"
@@ -6,29 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, FileText, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { prisma } from "@/lib/prisma"
+import { requireSession } from "@/lib/auth/session"
 
 export default async function MyCVsPage() {
-  const supabase = await createClient()
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
 
-  const { data: cvs } = await supabase
-    .from("user_cvs")
-    .select(
-      `
-      *,
-      cv_templates(name)
-    `,
-    )
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false })
+  const { user } = session
+
+  const cvs = await prisma.userCv.findMany({
+    where: { userId: user.id },
+    include: { template: true },
+    orderBy: { updatedAt: "desc" },
+  })
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +54,7 @@ export default async function MyCVsPage() {
           </Button>
         </div>
 
-        {!cvs || cvs.length === 0 ? (
+        {cvs.length === 0 ? (
           <Card>
             <CardContent className="flex min-h-[400px] flex-col items-center justify-center py-12">
               <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -83,18 +76,18 @@ export default async function MyCVsPage() {
               <Card key={cv.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="line-clamp-1">{cv.cv_name}</CardTitle>
-                    {cv.is_default && <Badge variant="secondary">Par défaut</Badge>}
+                    <CardTitle className="line-clamp-1">{cv.name}</CardTitle>
+                    {cv.isDefault && <Badge variant="secondary">Par défaut</Badge>}
                   </div>
                   <CardDescription className="line-clamp-2">
-                    {cv.cv_description || "Aucune description"}
+                    {cv.description || "Aucune description"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>Template: {cv.cv_templates?.name || "Personnalisé"}</p>
+                    <p>Template: {cv.template?.name || "Personnalisé"}</p>
                     <p>Version: {cv.version}</p>
-                    <p>Modifié: {new Date(cv.updated_at).toLocaleDateString("fr-FR")}</p>
+                    <p>Modifié: {cv.updatedAt.toLocaleDateString("fr-FR")}</p>
                   </div>
                 </CardContent>
                 <CardFooter className="flex gap-2">

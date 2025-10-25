@@ -1,43 +1,42 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { PersonalInfoForm } from "@/components/profile/personal-info-form"
 import { ExperienceSection } from "@/components/profile/experience-section"
 import { EducationSection } from "@/components/profile/education-section"
 import { SkillsSection } from "@/components/profile/skills-section"
+import { SecuritySection } from "@/components/profile/security-section"
 import { UserNav } from "@/components/user-nav"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CVImportDialog } from "@/components/ai/cv-import-dialog"
+import { requireSession } from "@/lib/auth/session"
+import { prisma } from "@/lib/prisma"
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
 
-  const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single()
+  const { user } = session
 
-  const { data: education } = await supabase
-    .from("user_education")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("display_order")
-
-  const { data: experience } = await supabase
-    .from("user_experience")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("display_order")
-
-  const { data: skills } = await supabase.from("user_skills").select("*").eq("user_id", user.id).order("display_order")
+  const profile = await prisma.user.findUnique({ where: { id: user.id } })
+  const education = await prisma.education.findMany({
+    where: { userId: user.id },
+    orderBy: { displayOrder: "asc" },
+  })
+  const experience = await prisma.experience.findMany({
+    where: { userId: user.id },
+    orderBy: { displayOrder: "asc" },
+  })
+  const skills = await prisma.skill.findMany({
+    where: { userId: user.id },
+    orderBy: { displayOrder: "asc" },
+  })
+  const twoFactorEnabled =
+    (await prisma.authenticator.count({ where: { userId: user.id, isPrimary: true } })) > 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,6 +71,7 @@ export default async function ProfilePage() {
             <TabsTrigger value="experience">Expériences</TabsTrigger>
             <TabsTrigger value="education">Formations</TabsTrigger>
             <TabsTrigger value="skills">Compétences</TabsTrigger>
+            <TabsTrigger value="security">Sécurité</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal">
@@ -88,6 +88,13 @@ export default async function ProfilePage() {
 
           <TabsContent value="skills">
             <SkillsSection skills={skills || []} />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecuritySection
+              initialTwoFactorEnabled={twoFactorEnabled}
+              emailVerified={Boolean(profile?.emailVerifiedAt)}
+            />
           </TabsContent>
         </Tabs>
       </main>

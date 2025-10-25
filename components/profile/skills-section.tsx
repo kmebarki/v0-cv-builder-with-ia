@@ -198,10 +198,10 @@ export function SkillsSection({ skills }: SkillsSectionProps) {
               <Badge
                 key={skill.id}
                 variant="secondary"
-                className={`group relative pr-8 ${getLevelColor(skill.skill_level)}`}
+                className={`group relative pr-8 ${getLevelColor(skill.level)}`}
               >
-                {skill.skill_name}
-                {skill.skill_level && <span className="ml-1 text-xs">({getLevelLabel(skill.skill_level)})</span>}
+                {skill.name}
+                {skill.level && <span className="ml-1 text-xs">({getLevelLabel(skill.level)})</span>}
                 <button
                   onClick={() => handleDelete(skill.id)}
                   className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs p-0.5 opacity-0 transition-opacity hover:bg-destructive/20 group-hover:opacity-100"

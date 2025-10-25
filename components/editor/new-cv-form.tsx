@@ -17,7 +17,7 @@ interface NewCVFormProps {
     id: string
     name: string
     description: string | null
-    thumbnail_url: string | null
+    previewUrl: string | null
   }
 }
 
@@ -53,9 +53,9 @@ export function NewCVForm({ template }: NewCVFormProps) {
           <div className="flex gap-4">
             <div className="w-1/3">
               <div className="aspect-[3/4] overflow-hidden rounded-lg border bg-muted">
-                {template.thumbnail_url ? (
+                {template.previewUrl ? (
                   <img
-                    src={template.thumbnail_url || "/placeholder.svg"}
+                    src={template.previewUrl || "/placeholder.svg"}
                     alt={template.name}
                     className="h-full w-full object-cover"
                   />
