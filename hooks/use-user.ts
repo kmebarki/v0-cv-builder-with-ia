@@ -1,38 +1,50 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+
+type SessionUser = {
+  id: string
+  email: string | null
+  roles: string[]
+}
 
 export function useUser() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<SessionUser | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+    let ignore = false
+
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        })
+        const data = (await response.json()) as { user: SessionUser | null }
+        if (!ignore) {
+          setUser(data.user)
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
     }
 
-    getUser()
+    fetchUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      router.refresh()
-    })
+    const onFocus = () => {
+      fetchUser().catch(console.error)
+    }
 
+    window.addEventListener("focus", onFocus)
     return () => {
-      subscription.unsubscribe()
+      ignore = true
+      window.removeEventListener("focus", onFocus)
     }
-  }, [supabase, router])
+  }, [router])
 
   return { user, loading }
 }

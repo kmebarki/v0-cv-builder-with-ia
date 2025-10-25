@@ -14,19 +14,19 @@ import { AIAssistantDialog } from "@/components/ai/ai-assistant-dialog"
 
 interface PersonalInfoFormProps {
   initialData: {
-    first_name?: string | null
-    last_name?: string | null
+    firstName?: string | null
+    lastName?: string | null
     phone?: string | null
     address?: string | null
     city?: string | null
-    postal_code?: string | null
+    postalCode?: string | null
     country?: string | null
-    current_position?: string | null
-    professional_summary?: string | null
-    linkedin_url?: string | null
-    portfolio_url?: string | null
-    github_url?: string | null
-    website_url?: string | null
+    currentPosition?: string | null
+    professionalSummary?: string | null
+    linkedinUrl?: string | null
+    portfolioUrl?: string | null
+    githubUrl?: string | null
+    websiteUrl?: string | null
   }
 }
 
@@ -59,63 +59,63 @@ export function PersonalInfoForm({ initialData }: PersonalInfoFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="first_name">Prénom</Label>
+              <Label htmlFor="firstName">Prénom</Label>
               <Input
-                id="first_name"
-                value={formData.first_name || ""}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                id="firstName"
+                value={formData.firstName || ""}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Nom</Label>
+              <Label htmlFor="lastName">Nom</Label>
               <Input
-                id="last_name"
-                value={formData.last_name || ""}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                id="lastName"
+                value={formData.lastName || ""}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="current_position">Poste actuel</Label>
+            <Label htmlFor="currentPosition">Poste actuel</Label>
             <Input
-              id="current_position"
-              value={formData.current_position || ""}
-              onChange={(e) => setFormData({ ...formData, current_position: e.target.value })}
+              id="currentPosition"
+              value={formData.currentPosition || ""}
+              onChange={(e) => setFormData({ ...formData, currentPosition: e.target.value })}
               placeholder="Ex: Développeur Full Stack"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="professional_summary">Résumé professionnel</Label>
+              <Label htmlFor="professionalSummary">Résumé professionnel</Label>
               <div className="flex gap-2">
                 <AIAssistantDialog
                   mode="generate"
-                  context={{ section: "summary", title: formData.current_position }}
-                  onApply={(text) => setFormData({ ...formData, professional_summary: text })}
+                  context={{ section: "summary", title: formData.currentPosition }}
+                  onApply={(text) => setFormData({ ...formData, professionalSummary: text })}
                 />
-                {formData.professional_summary && (
+                {formData.professionalSummary && (
                   <>
                     <AIAssistantDialog
                       mode="improve"
-                      initialText={formData.professional_summary}
+                      initialText={formData.professionalSummary}
                       context={{ context: "résumé professionnel" }}
-                      onApply={(text) => setFormData({ ...formData, professional_summary: text })}
+                      onApply={(text) => setFormData({ ...formData, professionalSummary: text })}
                     />
                     <AIAssistantDialog
                       mode="rephrase"
-                      initialText={formData.professional_summary}
-                      onApply={(text) => setFormData({ ...formData, professional_summary: text })}
+                      initialText={formData.professionalSummary}
+                      onApply={(text) => setFormData({ ...formData, professionalSummary: text })}
                     />
                   </>
                 )}
               </div>
             </div>
             <Textarea
-              id="professional_summary"
-              value={formData.professional_summary || ""}
-              onChange={(e) => setFormData({ ...formData, professional_summary: e.target.value })}
+              id="professionalSummary"
+              value={formData.professionalSummary || ""}
+              onChange={(e) => setFormData({ ...formData, professionalSummary: e.target.value })}
               placeholder="Décrivez brièvement votre parcours et vos compétences..."
               rows={4}
             />
@@ -150,14 +150,14 @@ export function PersonalInfoForm({ initialData }: PersonalInfoFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="postal_code">Code postal</Label>
-              <Input
-                id="postal_code"
-                value={formData.postal_code || ""}
-                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
+            <Label htmlFor="postalCode">Code postal</Label>
+            <Input
+              id="postalCode"
+              value={formData.postalCode || ""}
+              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
               <Label htmlFor="country">Pays</Label>
               <Input
                 id="country"
@@ -170,42 +170,42 @@ export function PersonalInfoForm({ initialData }: PersonalInfoFormProps) {
           <div className="space-y-4">
             <h4 className="font-medium">Liens professionnels</h4>
             <div className="space-y-2">
-              <Label htmlFor="linkedin_url">LinkedIn</Label>
+              <Label htmlFor="linkedinUrl">LinkedIn</Label>
               <Input
-                id="linkedin_url"
+                id="linkedinUrl"
                 type="url"
-                value={formData.linkedin_url || ""}
-                onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                value={formData.linkedinUrl || ""}
+                onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
                 placeholder="https://linkedin.com/in/..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="github_url">GitHub</Label>
+              <Label htmlFor="githubUrl">GitHub</Label>
               <Input
-                id="github_url"
+                id="githubUrl"
                 type="url"
-                value={formData.github_url || ""}
-                onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
+                value={formData.githubUrl || ""}
+                onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
                 placeholder="https://github.com/..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="portfolio_url">Portfolio</Label>
+              <Label htmlFor="portfolioUrl">Portfolio</Label>
               <Input
-                id="portfolio_url"
+                id="portfolioUrl"
                 type="url"
-                value={formData.portfolio_url || ""}
-                onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
+                value={formData.portfolioUrl || ""}
+                onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
                 placeholder="https://..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="website_url">Site web</Label>
+              <Label htmlFor="websiteUrl">Site web</Label>
               <Input
-                id="website_url"
+                id="websiteUrl"
                 type="url"
-                value={formData.website_url || ""}
-                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                value={formData.websiteUrl || ""}
+                onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
                 placeholder="https://..."
               />
             </div>

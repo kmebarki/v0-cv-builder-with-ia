@@ -21,22 +21,17 @@ interface Template {
   id: string
   name: string
   description: string | null
-  thumbnail_url: string | null
-  template_type: string | null
-  is_premium: boolean
-  usage_count: number
-  template_category_mapping: Array<{
-    cv_template_categories: {
-      id: string
-      name: string
-    }
+  previewUrl: string | null
+  templateType: string | null
+  isActive: boolean
+  usageCount: number
+  categories: Array<{
+    id: string
+    name: string
   }>
-  template_tag_mapping: Array<{
-    cv_template_tags: {
-      id: string
-      name: string
-      color: string | null
-    }
+  tags: Array<{
+    id: string
+    name: string
   }>
 }
 
@@ -49,7 +44,6 @@ interface Category {
 interface Tag {
   id: string
   name: string
-  color: string | null
 }
 
 interface TemplateGalleryProps {
@@ -66,9 +60,7 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
   const filteredTemplates = templates.filter((template) => {
     // Filter by category
     if (selectedCategory !== "all") {
-      const hasCategory = template.template_category_mapping.some(
-        (mapping) => mapping.cv_template_categories.name === selectedCategory,
-      )
+      const hasCategory = template.categories.some((category) => category.name === selectedCategory)
       if (!hasCategory) return false
     }
 
@@ -82,7 +74,7 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
 
     // Filter by tags
     if (selectedTags.length > 0) {
-      const templateTags = template.template_tag_mapping.map((mapping) => mapping.cv_template_tags.name)
+      const templateTags = template.tags.map((tag) => tag.name)
       const hasAllTags = selectedTags.every((tag) => templateTags.includes(tag))
       if (!hasAllTags) return false
     }
@@ -138,7 +130,6 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
       {/* Results Count */}
       <div className="text-sm text-muted-foreground">
         {filteredTemplates.length} template{filteredTemplates.length > 1 ? "s" : ""} trouvé
-        {filteredTemplates.length > 1 ? "s" : ""}
       </div>
 
       {/* Template Grid */}
@@ -154,9 +145,9 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
           {filteredTemplates.map((template) => (
             <Card key={template.id} className="overflow-hidden">
               <div className="relative aspect-[3/4] bg-muted">
-                {template.thumbnail_url ? (
+                {template.previewUrl ? (
                   <img
-                    src={template.thumbnail_url || "/placeholder.svg"}
+                    src={template.previewUrl || "/placeholder.svg"}
                     alt={template.name}
                     className="h-full w-full object-cover"
                   />
@@ -165,21 +156,19 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
                     <p className="text-sm text-muted-foreground">Aperçu non disponible</p>
                   </div>
                 )}
-                {template.is_premium && (
-                  <Badge className="absolute right-2 top-2" variant="default">
-                    Premium
-                  </Badge>
-                )}
-              </div>
-              <CardHeader>
+                <Badge className="absolute right-2 top-2" variant="outline">
+                      {template.templateType?.toUpperCase() ?? "STANDARD"}
+                    </Badge>
+                  </div>
+                  <CardHeader>
                 <CardTitle className="line-clamp-1">{template.name}</CardTitle>
                 <CardDescription className="line-clamp-2">{template.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-1">
-                  {template.template_tag_mapping.slice(0, 3).map((mapping) => (
-                    <Badge key={mapping.cv_template_tags.id} variant="secondary" className="text-xs">
-                      {mapping.cv_template_tags.name}
+                  {template.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag.id} variant="secondary" className="text-xs">
+                      {tag.name}
                     </Badge>
                   ))}
                 </div>
@@ -198,9 +187,9 @@ export function TemplateGallery({ templates, categories, tags }: TemplateGallery
                       <DialogDescription>{template.description}</DialogDescription>
                     </DialogHeader>
                     <div className="aspect-[3/4] bg-muted">
-                      {template.thumbnail_url ? (
+                      {template.previewUrl ? (
                         <img
-                          src={template.thumbnail_url || "/placeholder.svg"}
+                          src={template.previewUrl || "/placeholder.svg"}
                           alt={template.name}
                           className="h-full w-full object-contain"
                         />

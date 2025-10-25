@@ -1,7 +1,7 @@
 "use server"
 
 import { generateText } from "ai"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 
 export async function generateCVSection(section: string, context: any, model = "openai/gpt-4o-mini") {
   try {
@@ -171,16 +171,10 @@ Retourne uniquement le JSON, sans commentaires ni formatage markdown.`,
 
 export async function autoFillFromProfile(userId: string, fieldType: string, model = "openai/gpt-4o-mini") {
   try {
-    const supabase = await createClient()
-
-    // Fetch user profile data
-    const { data: user } = await supabase.from("users").select("*").eq("id", userId).single()
-
-    const { data: experiences } = await supabase.from("experiences").select("*").eq("user_id", userId)
-
-    const { data: education } = await supabase.from("education").select("*").eq("user_id", userId)
-
-    const { data: skills } = await supabase.from("skills").select("*").eq("user_id", userId)
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const experiences = await prisma.experience.findMany({ where: { userId } })
+    const education = await prisma.education.findMany({ where: { userId } })
+    const skills = await prisma.skill.findMany({ where: { userId } })
 
     const context = {
       user,

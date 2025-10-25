@@ -1,47 +1,46 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { UserNav } from "@/components/user-nav"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { TemplateGallery } from "@/components/templates/template-gallery"
+import { requireSession } from "@/lib/auth/session"
+import { prisma } from "@/lib/prisma"
 
 export default async function TemplatesPage() {
-  const supabase = await createClient()
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
 
-  // Fetch templates with their categories and tags
-  const { data: templates } = await supabase
-    .from("cv_templates")
-    .select(
-      `
-      *,
-      template_category_mapping(
-        cv_template_categories(*)
-      ),
-      template_tag_mapping(
-        cv_template_tags(*)
-      )
-    `,
-    )
-    .eq("is_active", true)
-    .order("usage_count", { ascending: false })
+  const { user } = session
 
-  const { data: categories } = await supabase
-    .from("cv_template_categories")
-    .select("*")
-    .eq("is_active", true)
-    .order("display_order")
+  const rawTemplates = await prisma.cvTemplate.findMany({
+    where: { isActive: true },
+    include: {
+      categories: true,
+      tags: true,
+    },
+    orderBy: { usageCount: "desc" },
+  })
 
-  const { data: tags } = await supabase.from("cv_template_tags").select("*").order("name")
+  const categories = await prisma.templateCategory.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+  })
+
+  const tags = await prisma.templateTag.findMany({
+    orderBy: { name: "asc" },
+  })
+
+  const templates = rawTemplates.map((template) => ({
+    ...template,
+    previewUrl: template.previewUrl,
+    usageCount: template.usageCount,
+    categories: template.categories.map((category) => ({ id: category.id, name: category.name })),
+    tags: template.tags.map((tag) => ({ id: tag.id, name: tag.name })),
+  }))
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +65,7 @@ export default async function TemplatesPage() {
           <p className="text-muted-foreground">Sélectionnez un template professionnel pour créer votre CV</p>
         </div>
 
-        <TemplateGallery templates={templates || []} categories={categories || []} tags={tags || []} />
+        <TemplateGallery templates={templates} categories={categories} tags={tags} />
       </main>
     </div>
   )

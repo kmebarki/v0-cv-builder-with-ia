@@ -1,17 +1,13 @@
-import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { NewCVForm } from "@/components/editor/new-cv-form"
+import { requireSession } from "@/lib/auth/session"
+import { prisma } from "@/lib/prisma"
 
 export default async function NewCVPage({ searchParams }: { searchParams: Promise<{ template?: string }> }) {
-  const supabase = await createClient()
   const params = await searchParams
+  const session = await requireSession()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  if (!session) {
     redirect("/auth/login")
   }
 
@@ -21,7 +17,7 @@ export default async function NewCVPage({ searchParams }: { searchParams: Promis
     redirect("/templates")
   }
 
-  const { data: template } = await supabase.from("cv_templates").select("*").eq("id", templateId).single()
+  const template = await prisma.cvTemplate.findUnique({ where: { id: templateId } })
 
   if (!template) {
     redirect("/templates")

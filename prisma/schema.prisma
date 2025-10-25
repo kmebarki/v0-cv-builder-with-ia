@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR
+  OAUTH_STATE
+}
+
+enum TemplateType {
+  PROFESSIONAL
+  CREATIVE
+  MINIMAL
+  EXECUTIVE
+  CLASSIC
+  CUSTOM
+}
+
+enum CvVisibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String?
+  emailVerifiedAt     DateTime?
+  firstName           String?
+  lastName            String?
+  phone               String?
+  address             String?
+  city                String?
+  postalCode          String?
+  country             String?
+  currentPosition     String?
+  professionalSummary String?
+  linkedinUrl         String?
+  portfolioUrl        String?
+  githubUrl           String?
+  websiteUrl          String?
+  avatarUrl           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  sessions            Session[]
+  verificationTokens  VerificationToken[]
+  authenticators      Authenticator[]
+  roles               UserRole[]
+  experiences         Experience[]
+  education           Education[]
+  skills              Skill[]
+  cvs                 UserCv[]
+  auditLogs           AuditLog[]
+  authEvents          AuthEvent[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  refreshToken String?  @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  rotatedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, sessionToken])
+}
+
+model VerificationToken {
+  id         String                @id @default(uuid())
+  identifier String
+  token      String                @unique
+  type       VerificationTokenType
+  expiresAt  DateTime
+  createdAt  DateTime              @default(now())
+  userId     String?
+  user       User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([identifier])
+  @@index([type])
+}
+
+model Authenticator {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String?
+  secret     String
+  counter    Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastUsedAt DateTime?
+  isPrimary  Boolean  @default(false)
+
+  @@unique([userId, label])
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  rules       RolePermission[]
+  members     UserRole[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  assignedAt   DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  userId     String
+  roleId     Int
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model CvTemplate {
+  id           String       @id @default(cuid())
+  name         String
+  description  String?
+  previewUrl   String?
+  templateType TemplateType @default(CUSTOM)
+  isActive     Boolean      @default(true)
+  usageCount   Int          @default(0)
+  metadata     Json?
+  structure    Json?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  categories   TemplateCategory[]
+  tags         TemplateTag[]
+  userCvs      UserCv[]
+}
+
+model TemplateCategory {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  templates   CvTemplate[] @relation("TemplateCategories")
+}
+
+model TemplateTag {
+  id        String       @id @default(cuid())
+  name      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  templates CvTemplate[] @relation("TemplateTags")
+}
+
+model UserCv {
+  id          String      @id @default(cuid())
+  userId      String
+  templateId  String?
+  name        String
+  description String?
+  structure   Json
+  isDefault   Boolean     @default(false)
+  isPublic    Boolean     @default(false)
+  version     Int         @default(1)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template    CvTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+}
+
+model Experience {
+  id           String   @id @default(cuid())
+  userId       String
+  company      String
+  position     String
+  startDate    DateTime?
+  endDate      DateTime?
+  isCurrent    Boolean  @default(false)
+  description  String?
+  location     String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Education {
+  id           String   @id @default(cuid())
+  userId       String
+  institution  String
+  degree       String
+  field        String?
+  startDate    DateTime?
+  endDate      DateTime?
+  description  String?
+  location     String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  level        String?
+  category     String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  description String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model AuthEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  event     String
+  status    String
+  reason    String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

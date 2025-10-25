@@ -26,10 +26,10 @@ interface Education {
   id: string
   institution: string
   degree: string
-  field_of_study: string | null
-  start_date: string | null
-  end_date: string | null
-  is_current: boolean
+  field: string | null
+  startDate: string | null
+  endDate: string | null
+  isCurrent: boolean
   description: string | null
   location: string | null
 }
@@ -44,13 +44,13 @@ export function EducationSection({ education }: EducationSectionProps) {
   const [formData, setFormData] = useState({
     institution: "",
     degree: "",
-    field_of_study: "",
-    start_date: "",
-    end_date: "",
-    is_current: false,
+    field: "",
+    startDate: "",
+    endDate: "",
+    isCurrent: false,
     description: "",
     location: "",
-    display_order: 0,
+    displayOrder: 0,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,13 +67,13 @@ export function EducationSection({ education }: EducationSectionProps) {
       setFormData({
         institution: "",
         degree: "",
-        field_of_study: "",
-        start_date: "",
-        end_date: "",
-        is_current: false,
+        field: "",
+        startDate: "",
+        endDate: "",
+        isCurrent: false,
         description: "",
         location: "",
-        display_order: 0,
+        displayOrder: 0,
       })
     }
 
@@ -133,13 +133,13 @@ export function EducationSection({ education }: EducationSectionProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="field_of_study">Domaine d'études</Label>
-                      <Input
-                        id="field_of_study"
-                        value={formData.field_of_study}
-                        onChange={(e) => setFormData({ ...formData, field_of_study: e.target.value })}
-                        placeholder="Informatique, Marketing, etc."
-                      />
+                    <Label htmlFor="field">Domaine d'études</Label>
+                    <Input
+                      id="field"
+                      value={formData.field}
+                      onChange={(e) => setFormData({ ...formData, field: e.target.value })}
+                      placeholder="Informatique, Marketing, etc."
+                    />
                     </div>
                   </div>
 
@@ -154,36 +154,36 @@ export function EducationSection({ education }: EducationSectionProps) {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="start_date">Date de début</Label>
-                      <Input
-                        id="start_date"
-                        type="date"
-                        value={formData.start_date}
-                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="end_date">Date de fin</Label>
-                      <Input
-                        id="end_date"
-                        type="date"
-                        value={formData.end_date}
-                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                        disabled={formData.is_current}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="is_current"
-                      checked={formData.is_current}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_current: checked as boolean })}
+                    <Label htmlFor="startDate">Date de début</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     />
-                    <Label htmlFor="is_current" className="cursor-pointer">
-                      Formation en cours
-                    </Label>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">Date de fin</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      disabled={formData.isCurrent}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isCurrent"
+                    checked={formData.isCurrent}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isCurrent: checked as boolean })}
+                  />
+                  <Label htmlFor="isCurrent" className="cursor-pointer">
+                    Formation en cours
+                  </Label>
+                </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
@@ -223,10 +223,10 @@ export function EducationSection({ education }: EducationSectionProps) {
                 <div className="flex-1">
                   <h4 className="font-semibold">{edu.degree}</h4>
                   <p className="text-sm text-muted-foreground">{edu.institution}</p>
-                  {edu.field_of_study && <p className="text-sm text-muted-foreground">{edu.field_of_study}</p>}
+                  {edu.field && <p className="text-sm text-muted-foreground">{edu.field}</p>}
                   {edu.location && <p className="text-sm text-muted-foreground">{edu.location}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {edu.start_date} - {edu.is_current ? "En cours" : edu.end_date}
+                    {edu.startDate} - {edu.isCurrent ? "En cours" : edu.endDate}
                   </p>
                   {edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
                 </div>

@@ -1,6 +1,7 @@
 // next.config.mjs (ESM) — recrée __dirname
 import { fileURLToPath } from "url"
 import { dirname } from "path"
+import { withSentryConfig } from "@sentry/nextjs"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
@@ -18,4 +19,12 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
 }
 
-export default nextConfig
+export default withSentryConfig(
+  nextConfig,
+  {
+    silent: true,
+  },
+  {
+    hideSourcemaps: true,
+  },
+)
