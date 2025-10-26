@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { CV_VARIABLES, VARIABLE_FUNCTIONS, CONDITIONAL_OPERATORS } from "@/lib/editor/variables"
+import { VARIABLE_FUNCTIONS, CONDITIONAL_OPERATORS } from "@/lib/editor/variables"
 import { Variable } from "lucide-react"
+import { useVariableRegistry } from "@/components/editor/use-variable-registry"
 
 interface VariablePickerProps {
   onSelect: (config: {
@@ -32,6 +33,8 @@ export function VariablePicker({ onSelect }: VariablePickerProps) {
   const [conditionalVariable, setConditionalVariable] = useState("")
   const [conditionalOperator, setConditionalOperator] = useState<keyof typeof CONDITIONAL_OPERATORS>("exists")
   const [conditionalValue, setConditionalValue] = useState("")
+  const variableRegistry = useVariableRegistry()
+  const registry = variableRegistry as Record<string, { label: string; fields: Record<string, { label: string; path: string }> }>
 
   const handleInsert = () => {
     if (!selectedField) return
@@ -79,7 +82,7 @@ export function VariablePicker({ onSelect }: VariablePickerProps) {
                 <SelectValue placeholder="Sélectionner une catégorie" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(CV_VARIABLES).map(([key, value]) => (
+                {Object.entries(registry).map(([key, value]) => (
                   <SelectItem key={key} value={key}>
                     {value.label}
                   </SelectItem>
@@ -97,7 +100,7 @@ export function VariablePicker({ onSelect }: VariablePickerProps) {
                   <SelectValue placeholder="Sélectionner un champ" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(CV_VARIABLES[selectedCategory as keyof typeof CV_VARIABLES].fields).map(
+                  {Object.entries(registry[selectedCategory]?.fields ?? {}).map(
                     ([key, value]) => (
                       <SelectItem key={key} value={value.path}>
                         {value.label}
@@ -158,7 +161,7 @@ export function VariablePicker({ onSelect }: VariablePickerProps) {
                       <SelectValue placeholder="Sélectionner une variable" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(CV_VARIABLES).map(([catKey, catValue]) =>
+                      {Object.entries(registry).map(([catKey, catValue]) =>
                         Object.entries(catValue.fields).map(([fieldKey, fieldValue]) => (
                           <SelectItem key={fieldValue.path} value={fieldValue.path}>
                             {catValue.label} - {fieldValue.label}

@@ -1,23 +1,38 @@
 "use client"
 
-import { useNode } from "@craftjs/core"
 import { useEffect, useState } from "react"
+import { useNode } from "@craftjs/core"
 import {
   resolveVariable,
   applyFunction,
   evaluateCondition,
-  type VARIABLE_FUNCTIONS,
+  VARIABLE_FUNCTIONS,
+  renderTemplateExpression,
   type CONDITIONAL_OPERATORS,
 } from "@/lib/editor/variables"
+import { useBindingData } from "@/components/editor/binding-context"
+import { useRegisteredNode } from "@/components/editor/use-registered-node"
+import { useTokenValue } from "@/components/editor/use-token-value"
+import { parseNumeric } from "@/lib/editor/token-utils"
 
 interface VariableTextNodeProps {
   variablePath?: string
   functions?: (keyof typeof VARIABLE_FUNCTIONS)[]
   fallbackText?: string
-  fontSize?: number
+  mode?: "single" | "template"
+  template?: string
+  fontSize?: number | string
   fontWeight?: string
   color?: string
   textAlign?: string
+  fontFamily?: string
+  lineHeight?: number
+  letterSpacing?: number
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize"
+  background?: string
+  padding?: number | string
+  borderRadius?: number | string
+  showOutline?: boolean
   conditionalDisplay?: {
     enabled: boolean
     variablePath: string
@@ -30,35 +45,55 @@ export function VariableTextNode({
   variablePath = "",
   functions = [],
   fallbackText = "Variable",
-  fontSize = 16,
+  mode = "single",
+  template = "",
+  fontSize = "fontSizes.md",
   fontWeight = "normal",
-  color = "#000000",
+  color = "theme.text",
   textAlign = "left",
+  fontFamily = "fonts.body",
+  lineHeight = 1.4,
+  letterSpacing = 0,
+  textTransform = "none",
+  background = "theme.surface",
+  padding = "spacing.xs",
+  borderRadius = "radii.sm",
+  showOutline = false,
   conditionalDisplay,
 }: VariableTextNodeProps) {
-  const {
-    connectors: { connect, drag },
-  } = useNode()
+  const { ref, translateX, translateY } = useRegisteredNode()
 
+  const { data: bindingData } = useBindingData()
   const [displayValue, setDisplayValue] = useState(fallbackText)
   const [shouldDisplay, setShouldDisplay] = useState(true)
 
-  // In a real app, this would come from a context or prop
-  // For now, we'll use mock data
-  const cvData = {
-    users: {
-      first_name: "Jean",
-      last_name: "Dupont",
-      email: "jean.dupont@example.com",
-      professional_title: "Développeur Full Stack",
-    },
-  }
+  const colorValue = useTokenValue<string>(color, color)
+  const backgroundValue = useTokenValue<string>(background, background)
+  const paddingValue = useTokenValue<number>(typeof padding === "string" ? padding : undefined, parseNumeric(padding)) ??
+    (typeof padding === "number" ? padding : 0)
+  const borderRadiusValue = useTokenValue<number>(
+    typeof borderRadius === "string" ? borderRadius : undefined,
+    parseNumeric(borderRadius),
+  ) ?? (typeof borderRadius === "number" ? borderRadius : 0)
+  const fontSizeToken = typeof fontSize === "string" ? fontSize : undefined
+  const fontSizeDefinition = useTokenValue<{ size: number; lineHeight: number }>(fontSizeToken, undefined)
+  const fontFamilyToken = typeof fontFamily === "string" && fontFamily.includes(".") ? fontFamily : undefined
+  const fontFamilyDefinition = useTokenValue<{ family: string; weight: number; lineHeight: number }>(
+    fontFamilyToken,
+    undefined,
+  )
+  const resolvedFontSize = fontSizeDefinition?.size ?? (typeof fontSize === "number" ? fontSize : 16)
+  const resolvedLineHeight = fontSizeDefinition?.lineHeight ?? fontFamilyDefinition?.lineHeight ?? lineHeight ?? 1.4
+  const resolvedFontFamily = fontFamilyDefinition?.family
+    ? `${fontFamilyDefinition.family}, sans-serif`
+    : fontFamily || "Inter, sans-serif"
+  const resolvedFontWeight = fontFamilyDefinition?.weight?.toString() ?? fontWeight ?? "normal"
 
   useEffect(() => {
     // Check conditional display
     if (conditionalDisplay?.enabled) {
       const shouldShow = evaluateCondition(
-        cvData,
+        bindingData,
         conditionalDisplay.variablePath,
         conditionalDisplay.operator,
         conditionalDisplay.compareValue,
@@ -67,11 +102,15 @@ export function VariableTextNode({
       if (!shouldShow) return
     }
 
-    // Resolve variable value
-    if (variablePath) {
-      let value = resolveVariable(cvData, variablePath)
+    if (mode === "template" && template.trim().length > 0) {
+      const value = renderTemplateExpression(template, bindingData)
+      setDisplayValue(value || fallbackText)
+      return
+    }
 
-      // Apply functions in order
+    if (variablePath) {
+      let value = resolveVariable(bindingData, variablePath)
+
       if (value && functions.length > 0) {
         for (const func of functions) {
           value = applyFunction(String(value), func)
@@ -79,8 +118,19 @@ export function VariableTextNode({
       }
 
       setDisplayValue(value || fallbackText)
+      return
     }
-  }, [variablePath, functions, fallbackText, conditionalDisplay, cvData])
+
+    setDisplayValue(fallbackText)
+  }, [
+    conditionalDisplay,
+    bindingData,
+    fallbackText,
+    functions,
+    mode,
+    template,
+    variablePath,
+  ])
 
   if (!shouldDisplay) {
     return null
@@ -88,15 +138,25 @@ export function VariableTextNode({
 
   return (
     <div
-      ref={(ref) => ref && connect(drag(ref))}
+      ref={ref}
+      data-pagination-block
+      data-pagination-root="true"
       style={{
-        fontSize: `${fontSize}px`,
-        fontWeight,
-        color,
+        fontSize: `${resolvedFontSize}px`,
+        fontWeight: resolvedFontWeight,
+        color: colorValue,
         textAlign: textAlign as any,
+        fontFamily: resolvedFontFamily,
+        lineHeight: resolvedLineHeight,
+        letterSpacing,
+        textTransform,
         cursor: "move",
-        padding: "4px",
-        border: "1px dashed #ccc",
+        padding: paddingValue,
+        borderRadius: borderRadiusValue,
+        backgroundColor: backgroundValue,
+        border: showOutline ? "1px dashed #cbd5f5" : "none",
+        position: "relative",
+        translate: `${translateX}px ${translateY}px`,
       }}
     >
       {displayValue}
@@ -110,10 +170,20 @@ VariableTextNode.craft = {
     variablePath: "",
     functions: [],
     fallbackText: "Variable",
-    fontSize: 16,
+    mode: "single" as const,
+    template: "",
+    fontSize: "fontSizes.md",
     fontWeight: "normal",
-    color: "#000000",
+    color: "theme.text",
     textAlign: "left",
+    fontFamily: "fonts.body",
+    lineHeight: 1.4,
+    letterSpacing: 0,
+    textTransform: "none",
+    background: "theme.surface",
+    padding: "spacing.xs",
+    borderRadius: "radii.sm",
+    showOutline: false,
     conditionalDisplay: {
       enabled: false,
       variablePath: "",
