@@ -10,6 +10,8 @@ interface AIFieldAssistantProps {
   showRephrase?: boolean
   showTranslate?: boolean
   showKeywords?: boolean
+  showAutoFill?: boolean
+  showAutoSection?: boolean
 }
 
 export function AIFieldAssistant({
@@ -21,6 +23,8 @@ export function AIFieldAssistant({
   showRephrase = true,
   showTranslate = false,
   showKeywords = false,
+  showAutoFill = false,
+  showAutoSection = false,
 }: AIFieldAssistantProps) {
   const hasValue = value && value.trim().length > 0
 
@@ -37,6 +41,14 @@ export function AIFieldAssistant({
       {hasValue && showTranslate && <AIAssistantDialog mode="translate" initialText={value} onApply={onApply} />}
 
       {hasValue && showKeywords && <AIAssistantDialog mode="keywords" initialText={value} onApply={onApply} />}
+
+      {showAutoFill && context?.userId && (
+        <AIAssistantDialog mode="autoFill" context={context} onApply={onApply} />
+      )}
+
+      {showAutoSection && context?.userId && (
+        <AIAssistantDialog mode="autoSection" context={context} onApply={onApply} />
+      )}
     </div>
   )
 }

@@ -60,6 +60,8 @@ model User {
   cvs                 UserCv[]
   auditLogs           AuditLog[]
   authEvents          AuthEvent[]
+  adminFieldValues    AdminFieldValue[]
+  mediaAssets         MediaAsset[]
 }
 
 model Session {
@@ -195,6 +197,88 @@ model UserCv {
   updatedAt   DateTime    @updatedAt
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   template    CvTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  mediaAssets MediaAsset[]
+}
+
+model AdminField {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  fieldType   String
+  config      Json?
+  validations Json?
+  visibility  String   @default("profile")
+  isRequired  Boolean  @default(false)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  values      AdminFieldValue[]
+}
+
+model AdminFieldValue {
+  id        String     @id @default(cuid())
+  fieldId   String
+  userId    String
+  cvId      String?
+  value     Json
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  field     AdminField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv        UserCv?    @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldId, userId, cvId])
+}
+
+model DesignTokenSet {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  version     Int      @default(1)
+  definition  Json
+  modes       Json?
+  isActive    Boolean  @default(false)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaAsset {
+  id           String      @id @default(cuid())
+  userId       String
+  cvId         String?
+  name         String
+  description  String?
+  type         String
+  url          String
+  thumbnailUrl String?
+  metadata     Json?
+  version      Int         @default(1)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv           UserCv?     @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  tags         MediaAssetTag[]
+}
+
+model MediaTag {
+  id          String          @id @default(cuid())
+  label       String
+  slug        String          @unique
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  assets      MediaAssetTag[]
+}
+
+model MediaAssetTag {
+  assetId String
+  tagId   String
+  asset   MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  tag     MediaTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([assetId, tagId])
 }
 
 model Experience {

@@ -123,3 +123,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-editor-locked="true"] {
+  position: relative !important;
+}
+
+[data-editor-locked="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+      45deg,
+      rgba(15, 23, 42, 0.12),
+      rgba(15, 23, 42, 0.12) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    rgba(15, 23, 42, 0.2);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 60;
+}
+
+[data-editor-locked="true"]::before {
+  content: "\1F512";
+  font-size: 14px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 70;
+  color: rgba(15, 23, 42, 0.85);
+}

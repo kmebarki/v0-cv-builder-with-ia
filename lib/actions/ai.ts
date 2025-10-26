@@ -169,7 +169,12 @@ Retourne uniquement le JSON, sans commentaires ni formatage markdown.`,
   }
 }
 
-export async function autoFillFromProfile(userId: string, fieldType: string, model = "openai/gpt-4o-mini") {
+export async function autoFillFromProfile(
+  userId: string,
+  fieldType: string,
+  model = "openai/gpt-4o-mini",
+  instructions?: string,
+) {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } })
     const experiences = await prisma.experience.findMany({ where: { userId } })
@@ -189,6 +194,8 @@ export async function autoFillFromProfile(userId: string, fieldType: string, mod
 
 ${JSON.stringify(context, null, 2)}
 
+Consignes supplémentaires: ${instructions ?? ""}
+
 Retourne uniquement le texte généré, sans commentaires.`,
       temperature: 0.7,
     })
@@ -197,6 +204,160 @@ Retourne uniquement le texte généré, sans commentaires.`,
   } catch (error) {
     console.error("[v0] AI auto-fill error:", error)
     return { success: false, error: "Erreur lors du remplissage automatique" }
+  }
+}
+
+export async function autoSectionFromProfile(
+  options: { userId: string; section: string; language?: string; model?: string } = {
+    userId: "",
+    section: "experiences",
+  },
+) {
+  const { userId, section, language = "français", model = "openai/gpt-4o-mini" } = options
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const experiences = await prisma.experience.findMany({ where: { userId }, orderBy: { startDate: "desc" } })
+    const education = await prisma.education.findMany({ where: { userId }, orderBy: { startDate: "desc" } })
+    const skills = await prisma.skill.findMany({ where: { userId } })
+
+    const context = {
+      user,
+      experiences,
+      education,
+      skills,
+    }
+
+    const { text } = await generateText({
+      model,
+      prompt: `En te basant sur le profil JSON suivant, construis une section de CV nommée "${section}".
+Parle en ${language}.
+Retourne un objet JSON avec cette structure:
+{
+  "title": "",
+  "items": [
+    {
+      "headline": "",
+      "subline": "",
+      "description": ""
+    }
+  ]
+}
+
+Profil:
+${JSON.stringify(context, null, 2)}
+
+Le JSON doit être valide, sans texte additionnel.`,
+      temperature: 0.6,
+    })
+
+    const cleaned = text
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim()
+
+    try {
+      const sectionData = JSON.parse(cleaned)
+      return { success: true, section: sectionData, raw: cleaned }
+    } catch (parseError) {
+      console.warn("[v0] auto-section parse warning", parseError)
+      return { success: true, raw: cleaned }
+    }
+  } catch (error) {
+    console.error("[v0] AI auto-section error:", error)
+    return { success: false, error: "Erreur lors de la génération de section" }
+  }
+}
+
+export async function suggestTemplateLayout(
+  options: { prompt: string; profile?: any; model?: string } = { prompt: "" },
+) {
+  const { prompt, profile, model = "openai/gpt-4o-mini" } = options
+  try {
+    const { text } = await generateText({
+      model,
+      prompt: `Tu es un directeur artistique spécialisé en CV. Propose une structure complète (sections, ordre, suggestions de blocs et styles) pour le profil suivant.
+
+Contexte complémentaire: ${prompt || "Pas de contexte"}
+
+Profil JSON:
+${JSON.stringify(profile ?? {}, null, 2)}
+
+Retourne un plan sous forme de liste numérotée avec des recommandations précises.`,
+      temperature: 0.8,
+    })
+
+    return { success: true, text }
+  } catch (error) {
+    console.error("[v0] AI layout error:", error)
+    return { success: false, error: "Erreur lors de la génération de la structure" }
+  }
+}
+
+export async function helpWithBindingExpression(description: string, profile?: any, model = "openai/gpt-4o-mini") {
+  try {
+    const { text } = await generateText({
+      model,
+      prompt: `Tu es un assistant expert en JSONLogic et expressions pour un éditeur de template.
+Description du besoin: ${description}
+Profil disponible:
+${JSON.stringify(profile ?? {}, null, 2)}
+
+Propose une ou plusieurs expressions JSON prêtes à être copiées, explique brièvement leur fonctionnement.`,
+      temperature: 0.6,
+    })
+
+    return { success: true, text }
+  } catch (error) {
+    console.error("[v0] AI binding help error:", error)
+    return { success: false, error: "Erreur lors de la génération de la formule" }
+  }
+}
+
+export async function suggestDesignDirections(
+  options: { prompt: string; profile?: any; model?: string } = { prompt: "" },
+) {
+  const { prompt, profile, model = "openai/gpt-4o-mini" } = options
+  try {
+    const { text } = await generateText({
+      model,
+      prompt: `Tu es un designer UI. Suggère une direction graphique pour ce template de CV.
+
+Instructions: ${prompt}
+Profil:
+${JSON.stringify(profile ?? {}, null, 2)}
+
+Donne une palette (couleurs hex), des typographies et des suggestions de blocs graphiques (badges, formes, pictogrammes). Retourne un plan structuré en sections.`,
+      temperature: 0.75,
+    })
+
+    return { success: true, text }
+  } catch (error) {
+    console.error("[v0] AI design direction error:", error)
+    return { success: false, error: "Erreur lors des recommandations design" }
+  }
+}
+
+export async function recommendPageBreaks(profile?: any, model = "openai/gpt-4o-mini") {
+  try {
+    const { text } = await generateText({
+      model,
+      prompt: `Analyse les données suivantes et suggère où placer des sauts de page dans un CV multi-pages.
+Indique :
+- Les sections à regrouper par page
+- Les risques de veuves/orphelines
+- Les conseils de pagination dynamique
+
+Profil JSON:
+${JSON.stringify(profile ?? {}, null, 2)}
+
+Fournis une réponse concise en listes à puces.`,
+      temperature: 0.5,
+    })
+
+    return { success: true, text }
+  } catch (error) {
+    console.error("[v0] AI pagination error:", error)
+    return { success: false, error: "Erreur lors de l'analyse de la pagination" }
   }
 }
 

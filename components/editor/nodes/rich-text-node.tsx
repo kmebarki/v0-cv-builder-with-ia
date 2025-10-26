@@ -4,10 +4,18 @@ import React, { useMemo, useCallback } from "react"
 import { useNode } from "@craftjs/core"
 import { createEditor, Descendant, Transforms, Editor, Text } from "slate"
 import { Slate, Editable, withReact, ReactEditor } from "slate-react"
+import { useRegisteredNode } from "@/components/editor/use-registered-node"
+import { useTokenValue } from "@/components/editor/use-token-value"
+import { parseNumeric } from "@/lib/editor/token-utils"
 
 type RichTextNodeProps = {
   content?: Descendant[]
   minHeight?: number
+  background?: string
+  padding?: number | string
+  borderRadius?: number | string
+  borderColor?: string
+  borderWidth?: number | string
 }
 
 const DEFAULT_VALUE: Descendant[] = [
@@ -56,11 +64,29 @@ const toggleMark = (editor: Editor, mark: string) => {
 export function RichTextNode({
   content = DEFAULT_VALUE,
   minHeight = 100,
+  background = "theme.surface",
+  padding = "spacing.md",
+  borderRadius = "radii.md",
+  borderColor = "theme.divider",
+  borderWidth = 1,
 }: RichTextNodeProps) {
   const {
-    connectors: { connect, drag },
     actions: { setProp },
   } = useNode()
+  const { ref, translateX, translateY } = useRegisteredNode()
+
+  const backgroundValue = useTokenValue<string>(background, background)
+  const paddingValue = useTokenValue<number>(typeof padding === "string" ? padding : undefined, parseNumeric(padding)) ??
+    (typeof padding === "number" ? padding : 0)
+  const borderRadiusValue = useTokenValue<number>(
+    typeof borderRadius === "string" ? borderRadius : undefined,
+    parseNumeric(borderRadius),
+  ) ?? (typeof borderRadius === "number" ? borderRadius : 0)
+  const borderColorValue = useTokenValue<string>(borderColor, borderColor)
+  const borderWidthValue = useTokenValue<number>(
+    typeof borderWidth === "string" ? borderWidth : undefined,
+    parseNumeric(borderWidth),
+  ) ?? (typeof borderWidth === "number" ? borderWidth : 0)
 
   // Éditeur Slate
   const editor = useMemo(() => withReact(createEditor() as ReactEditor), [])
@@ -158,9 +184,20 @@ export function RichTextNode({
 
   return (
     <div
-      ref={(ref) => ref && connect(drag(ref))}
-      style={{ minHeight }}
-      className="rounded border border-dashed border-gray-300 p-2"
+      ref={ref}
+      data-pagination-block
+      data-pagination-root="true"
+      style={{
+        minHeight,
+        background: backgroundValue,
+        padding: paddingValue,
+        borderRadius: borderRadiusValue,
+        borderWidth: borderWidthValue,
+        borderColor: borderColorValue,
+        borderStyle: "dashed",
+        position: "relative",
+        translate: `${translateX}px ${translateY}px`,
+      }}
     >
       <Slate editor={editor} initialValue={content} onChange={handleChange}>
         <Toolbar />
@@ -183,6 +220,11 @@ RichTextNode.craft = {
   props: {
     content: DEFAULT_VALUE,
     minHeight: 100,
+    background: "theme.surface",
+    padding: "spacing.md",
+    borderRadius: "radii.md",
+    borderColor: "theme.divider",
+    borderWidth: 1,
   },
   related: {
     toolbar: () => <div>Rich Text Settings</div>,

@@ -7,11 +7,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sparkles, Loader2 } from "lucide-react"
-import { generateCVSection, improveText, rephraseText, translateText, extractKeywords } from "@/lib/actions/ai"
+import {
+  generateCVSection,
+  improveText,
+  rephraseText,
+  translateText,
+  extractKeywords,
+  autoFillFromProfile,
+  autoSectionFromProfile,
+} from "@/lib/actions/ai"
 import { toast } from "sonner"
 
 interface AIAssistantDialogProps {
-  mode: "generate" | "improve" | "rephrase" | "translate" | "keywords"
+  mode: "generate" | "improve" | "rephrase" | "translate" | "keywords" | "autoFill" | "autoSection"
   initialText?: string
   context?: any
   onApply: (text: string) => void
@@ -32,41 +40,108 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
     rephrase: "Reformuler",
     translate: "Traduire",
     keywords: "Extraire les mots-clés",
+    autoFill: "Remplissage automatique",
+    autoSection: "Section automatique",
   }
+
+  const requiresInput = mode === "improve" || mode === "rephrase" || mode === "translate" || mode === "keywords"
 
   const handleGenerate = async () => {
     setLoading(true)
     try {
-      let result
-
       switch (mode) {
-        case "generate":
-          result = await generateCVSection(context?.section || "summary", context, model)
-          break
-        case "improve":
-          result = await improveText(input, context?.context || "", model)
-          break
-        case "rephrase":
-          result = await rephraseText(input, tone, model)
-          break
-        case "translate":
-          result = await translateText(input, language, model)
-          break
-        case "keywords":
-          result = await extractKeywords(input, model)
-          if (result.success && result.keywords) {
-            setOutput(result.keywords.join(", "))
-            return
+        case "generate": {
+          const result = await generateCVSection(context?.section || "summary", context, model)
+          if (result?.success && result.text) {
+            setOutput(result.text)
+          } else {
+            toast.error(result?.error || "Erreur lors de la génération")
           }
           break
-      }
-
-      if (result?.success && result.text) {
-        setOutput(result.text)
-      } else {
-        toast.error(result?.error || "Erreur lors de la génération")
+        }
+        case "improve": {
+          const result = await improveText(input, context?.context || "", model)
+          if (result?.success && result.text) {
+            setOutput(result.text)
+          } else {
+            toast.error(result?.error || "Erreur lors de la génération")
+          }
+          break
+        }
+        case "rephrase": {
+          const result = await rephraseText(input, tone, model)
+          if (result?.success && result.text) {
+            setOutput(result.text)
+          } else {
+            toast.error(result?.error || "Erreur lors de la génération")
+          }
+          break
+        }
+        case "translate": {
+          const result = await translateText(input, language, model)
+          if (result?.success && result.text) {
+            setOutput(result.text)
+          } else {
+            toast.error(result?.error || "Erreur lors de la génération")
+          }
+          break
+        }
+        case "keywords": {
+          const result = await extractKeywords(input, model)
+          if (result?.success && result.keywords) {
+            setOutput(result.keywords.join(", "))
+          } else {
+            toast.error(result?.error || "Impossible d'extraire les mots-clés")
+          }
+          break
+        }
+        case "autoFill": {
+          if (!context?.userId) {
+            toast.error("Utilisateur requis pour le remplissage automatique")
+            return
+          }
+          const result = await autoFillFromProfile(
+            context.userId,
+            context?.fieldType || "section",
+            model,
+            context?.instructions,
+          )
+          if (result?.success && result.text) {
+            setOutput(result.text)
+          } else {
+            toast.error(result?.error || "Impossible de générer le contenu")
+          }
+          break
+        }
+        case "autoSection": {
+          if (!context?.userId) {
+            toast.error("Utilisateur requis pour la section automatique")
+            return
+          }
+          const response = await autoSectionFromProfile({
+            userId: context.userId,
+            section: context?.section || "section",
+            language,
+            model,
+          })
+          if (response.success) {
+            if (response.section) {
+              setOutput(JSON.stringify(response.section, null, 2))
+            } else if (response.raw) {
+              setOutput(response.raw)
+            } else {
+              toast.error("Réponse IA vide")
+            }
+          } else {
+            toast.error(response.error || "Impossible de générer la section")
+          }
+          break
+        }
+        default:
+          break
       }
     } catch (error) {
+      console.error("assistant error", error)
       toast.error("Erreur lors de la génération")
     } finally {
       setLoading(false)
@@ -74,6 +149,10 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
   }
 
   const handleApply = () => {
+    if (!output.trim()) {
+      toast.error("Aucun contenu à appliquer")
+      return
+    }
     onApply(output)
     setOpen(false)
     setOutput("")
@@ -94,7 +173,6 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Model selection */}
           <div className="space-y-2">
             <Label>Modèle IA</Label>
             <Select value={model} onValueChange={setModel}>
@@ -110,7 +188,6 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
             </Select>
           </div>
 
-          {/* Mode-specific options */}
           {mode === "rephrase" && (
             <div className="space-y-2">
               <Label>Ton</Label>
@@ -128,9 +205,9 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
             </div>
           )}
 
-          {mode === "translate" && (
+          {(mode === "translate" || mode === "autoSection") && (
             <div className="space-y-2">
-              <Label>Langue cible</Label>
+              <Label>Langue</Label>
               <Select value={language} onValueChange={setLanguage}>
                 <SelectTrigger>
                   <SelectValue />
@@ -146,21 +223,26 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
             </div>
           )}
 
-          {/* Input text (for improve, rephrase, translate, keywords) */}
-          {mode !== "generate" && (
+          {requiresInput && (
             <div className="space-y-2">
               <Label>Texte d'entrée</Label>
               <Textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(event) => setInput(event.target.value)}
                 placeholder="Entrez le texte à traiter..."
                 rows={6}
               />
             </div>
           )}
 
-          {/* Generate button */}
-          <Button onClick={handleGenerate} disabled={loading || (mode !== "generate" && !input)} className="w-full">
+          <Button
+            onClick={handleGenerate}
+            disabled={
+              loading ||
+              (requiresInput && input.trim().length === 0)
+            }
+            className="w-full"
+          >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -174,11 +256,10 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
             )}
           </Button>
 
-          {/* Output */}
           {output && (
             <div className="space-y-2">
               <Label>Résultat</Label>
-              <Textarea value={output} onChange={(e) => setOutput(e.target.value)} rows={8} className="font-mono" />
+              <Textarea value={output} onChange={(event) => setOutput(event.target.value)} rows={8} className="font-mono" />
               <Button onClick={handleApply} className="w-full">
                 Appliquer
               </Button>
