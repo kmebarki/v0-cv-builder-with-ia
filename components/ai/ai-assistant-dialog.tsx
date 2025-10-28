@@ -18,10 +18,20 @@ import {
 } from "@/lib/actions/ai"
 import { toast } from "sonner"
 
+export interface AIAssistantContext {
+  userId?: string | null
+  fieldType?: string
+  section?: string
+  instructions?: string
+  context?: string
+  cvData?: unknown
+  [key: string]: unknown
+}
+
 interface AIAssistantDialogProps {
   mode: "generate" | "improve" | "rephrase" | "translate" | "keywords" | "autoFill" | "autoSection"
   initialText?: string
-  context?: any
+  context?: AIAssistantContext
   onApply: (text: string) => void
 }
 
@@ -49,9 +59,13 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
   const handleGenerate = async () => {
     setLoading(true)
     try {
+      const userId = typeof context?.userId === "string" && context.userId.trim().length > 0 ? context.userId : undefined
+      const section = typeof context?.section === "string" && context.section.trim().length > 0 ? context.section : undefined
+      const instructions = typeof context?.instructions === "string" ? context.instructions : undefined
+
       switch (mode) {
         case "generate": {
-          const result = await generateCVSection(context?.section || "summary", context, model)
+          const result = await generateCVSection(section || "summary", context, model)
           if (result?.success && result.text) {
             setOutput(result.text)
           } else {
@@ -96,16 +110,11 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
           break
         }
         case "autoFill": {
-          if (!context?.userId) {
+          if (!userId) {
             toast.error("Utilisateur requis pour le remplissage automatique")
             return
           }
-          const result = await autoFillFromProfile(
-            context.userId,
-            context?.fieldType || "section",
-            model,
-            context?.instructions,
-          )
+          const result = await autoFillFromProfile(userId, context?.fieldType || "section", model, instructions)
           if (result?.success && result.text) {
             setOutput(result.text)
           } else {
@@ -114,13 +123,13 @@ export function AIAssistantDialog({ mode, initialText = "", context, onApply }: 
           break
         }
         case "autoSection": {
-          if (!context?.userId) {
+          if (!userId) {
             toast.error("Utilisateur requis pour la section automatique")
             return
           }
           const response = await autoSectionFromProfile({
-            userId: context.userId,
-            section: context?.section || "section",
+            userId,
+            section: section || "section",
             language,
             model,
           })

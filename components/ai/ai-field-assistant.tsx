@@ -1,10 +1,10 @@
 "use client"
-import { AIAssistantDialog } from "./ai-assistant-dialog"
+import { AIAssistantDialog, type AIAssistantContext } from "./ai-assistant-dialog"
 
 interface AIFieldAssistantProps {
   value: string
   onApply: (text: string) => void
-  context?: any
+  context?: AIAssistantContext
   showGenerate?: boolean
   showImprove?: boolean
   showRephrase?: boolean
@@ -27,6 +27,7 @@ export function AIFieldAssistant({
   showAutoSection = false,
 }: AIFieldAssistantProps) {
   const hasValue = value && value.trim().length > 0
+  const hasUserContext = typeof context?.userId === "string" && context.userId.trim().length > 0
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -42,11 +43,11 @@ export function AIFieldAssistant({
 
       {hasValue && showKeywords && <AIAssistantDialog mode="keywords" initialText={value} onApply={onApply} />}
 
-      {showAutoFill && context?.userId && (
+      {showAutoFill && hasUserContext && (
         <AIAssistantDialog mode="autoFill" context={context} onApply={onApply} />
       )}
 
-      {showAutoSection && context?.userId && (
+      {showAutoSection && hasUserContext && (
         <AIAssistantDialog mode="autoSection" context={context} onApply={onApply} />
       )}
     </div>
