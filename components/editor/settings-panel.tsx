@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { AIFieldAssistant } from "@/components/ai/ai-field-assistant"
+import type { AIAssistantContext } from "@/components/ai/ai-assistant-dialog"
 import { useTemplateEditor } from "@/components/editor/editor-context"
 import { TokenRefPicker } from "@/components/editor/token-ref-picker"
 import { VARIABLE_FUNCTIONS, CONDITIONAL_OPERATORS, resolveVariable } from "@/lib/editor/variables"
@@ -1759,12 +1760,21 @@ function NodeSettings() {
     return <div className="text-sm text-muted-foreground">Aucun comportement spécifique.</div>
   }
 
-  const userId = cvData?.user?.id ?? cvData?.profile?.id ?? cvData?.personal?.id ?? cvData?.id ?? null
+  const userIdCandidates = [
+    cvData?.user?.id,
+    cvData?.profile?.id,
+    cvData?.personal?.id,
+    cvData?.id,
+  ] as Array<unknown>
+  const userId =
+    userIdCandidates.find((candidate): candidate is string =>
+      typeof candidate === "string" && candidate.trim().length > 0,
+    ) ?? null
   const fieldType = isVariableText ? props.variablePath || props.text || name : name
   const repeatSection = isRepeat ? props.collectionPath || fieldType : fieldType
-  const assistantContext = {
+  const assistantContext: AIAssistantContext = {
     cvData,
-    userId,
+    userId: userId ?? undefined,
     fieldType,
     section: repeatSection,
   }

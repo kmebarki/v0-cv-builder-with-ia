@@ -21,6 +21,13 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
 
   const cv = await prisma.userCv.findFirst({
     where: { id, userId: session.user.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+        },
+      },
+    },
   })
 
   if (!cv) {
@@ -61,6 +68,7 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
 
   const baseCvData = {
     user: profile && {
+      id: profile.id,
       firstName: profile.firstName,
       lastName: profile.lastName,
       email: profile.email,
