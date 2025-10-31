@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+out
+.vercel
+.env
+.env.*
+*.local
+coverage
+pnpm-lock.yaml
+public/uploads
+playwright/.cache
