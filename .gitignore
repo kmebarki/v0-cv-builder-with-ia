@@ -10,3 +10,4 @@ coverage
 pnpm-lock.yaml
 public/uploads
 playwright/.cache
+.DS_Store
